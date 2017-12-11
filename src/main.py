@@ -1,42 +1,49 @@
-# The code is placed into public domain by anatoly techtonik
-# Feel free to copy/paste wherever you like
 
-# Minimal PySide application with button for choosing color to paint itself
-#
-# NOTE: Setting color for a button may destroy default system
-#       theme for the element - like rounded corners etc. because
-#       OS theme engine may not support setting colors for buttons:
-#       http://qt-project.org/doc/qt-4.8/stylesheet-examples.html#customizing-a-qpushbutton-using-the-box-model
+from PyQt4 import QtGui
+from PyQt4 import QtCore
+import sys
 
+# Import our user interface produced by QTDesigner.
+import ui
 
-from PySide.QtGui import QApplication, QPushButton, QColorDialog, QMessageBox
+# For the loading stuff.
+import os
 
+# Computer vision library
+import cv2
 
-class ButtonPainter(object):
-  def __init__(self, button):
-    self.button = button
-
-  def choose_color(self):
-    # Select color
-    color  = QColorDialog().getColor()
-    
-    if color.isValid():
-        self.button.setStyleSheet(u'background-color:' + color.name())
-    else:
-        msgbox = QMessageBox()
-        msgbox.setWindowTitle(u'No Color was Selected')
-        msgbox.exec_()
+class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.setupUi(self)
+        self.LoadImagesButton.clicked.connect(self.loadImagesCalib)
+        # When the calibration is not done disable tab 1.
+        self.applicationTab.setTabEnabled(1, False)
+        # When the reconstruction is not done disable tab 2.
+        self.applicationTab.setTabEnabled(2, False)
 
 
-app = QApplication([])
-    
-# Create top level window/button
-button = QPushButton('Choose Color')
-# button.clicked.connect() doesn't support passing custom parameters to
-# handler function (reference to the  button that we want to paint), so we
-# create object that will hold this parameter
-button_painter = ButtonPainter(button)
-button.clicked.connect(button_painter.choose_color)
-button.show()
+    def loadImagesCalib(self):
+        filenames = QtGui.QFileDialog.getOpenFileNames(self , "Open File", QtCore.QDir.currentPath());
 
-app.exec_()
+        for fileName in filenames:
+            if fileName:
+                image = QtGui.QImage(fileName)
+                if image.isNull():
+                    QtGui.QMessageBox.information(self, "Image Viewer", "Cannot load %s. Only image files are accepted." % fileName)
+                    return
+            tmp = QtGui.QPixmap(fileName)
+            label = QtGui.QLabel(self.distortedImage)
+            # Does not work ...
+            label.setScaledContents(True)
+            label.setPixmap(tmp)
+            label.show()
+
+def main():
+    app = QtGui.QApplication(sys.argv)
+    form = TextureReconstruction()
+    form.show()
+    app.exec_()
+
+if __name__ == '__main__':
+    main()
