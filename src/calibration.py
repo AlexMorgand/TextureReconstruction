@@ -6,8 +6,8 @@ class Calibration():
   def __init__(self, ui, row = 9, col = 6):
     # Link the user interface to handle progress bars and focus.
     self.ui = ui
-    self.row = 9
-    self.col = 6
+    self.row = row
+    self.col = col
 
   def checkCalibImage(self, image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

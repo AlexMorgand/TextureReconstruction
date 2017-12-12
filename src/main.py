@@ -26,8 +26,13 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         # When the reconstruction is not done disable tab 2.
         self.applicationTab.setTabEnabled(2, False)
 
+        self.imageSlider.setVisible(False)
+        self.imageSlider.valueChanged.connect(self.sliderChange)
+
         # Attributes.
         self.calibImages = []
+        self.undistortedImages = []
+        self.distortedImages = []
         self.reconstructionImages = []
         self.calib = calibration.Calibration(self)
 
@@ -49,31 +54,47 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 
     def calibrateCamera(self):
         K, dist = self.calib.calibrateImages(self.calibImages)
-        img = self.calibImages[0]
-        height, width = img.shape[:2]
-
+        nb_img = len(self.calibImages)
+        height, width, channel = self.calibImages[0].shape
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, dist, (width, height), 1, (width, height))
-        # undistort
-        #dst = cv2.undistort(img, K, dist, None, newcameramtx)
 
-        mapx,mapy = cv2.initUndistortRectifyMap(K, dist, None, newcameramtx, (width, height),5)
-        dst = cv2.remap(img,mapx,mapy,cv2.INTER_LINEAR)
+        for img in self.calibImages:
+            # undistort
+            dst = cv2.undistort(img, K, dist, None, newcameramtx)
 
-        # crop the image
-        x, y, w, h = roi
-        dst = dst[y:y+h, x:x+w]
+            #mapx,mapy = cv2.initUndistortRectifyMap(K, dist, None, newcameramtx, (width, height),5)
+            #dst = cv2.remap(img,mapx,mapy,cv2.INTER_LINEAR)
 
+            # crop the image
+            #x, y, w, h = roi
+            #dst = dst[y:y+h, x:x+w]
 
-        bytesPerLine = 3 * width
-        tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-        self.distortedImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
+            bytesPerLine = 3 * width
+            tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+            self.distortedImages += [tmp]
+
+            tmp = QtGui.QImage(dst.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+
+            self.undistortedImages += [tmp]
+
+            self.applicationTab.setTabEnabled(1, True)
+            self.imageSlider.setVisible(True)
+            self.imageSlider.setMinimum(0)
+            self.imageSlider.setMaximum(nb_img - 1)
+
+            # Initial call to init.
+            self.sliderChange()
+
+    def sliderChange(self):
+        i = self.imageSlider.value()
+        disImg = self.distortedImages[i]
+        self.distortedImage.setPixmap(QtGui.QPixmap.fromImage(disImg))
         self.distortedImage.show()
 
-        tmp = QtGui.QImage(dst.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-        self.undistortedImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
+        undisImg = self.undistortedImages[i]
+        self.undistortedImage.setPixmap(QtGui.QPixmap.fromImage(undisImg))
         self.undistortedImage.show()
 
-        self.applicationTab.setTabEnabled(1, True)
 
 def main():
     app = QtGui.QApplication(sys.argv)

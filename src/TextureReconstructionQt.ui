@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>648</width>
-    <height>553</height>
+    <height>580</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
        <bool>false</bool>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="calibrationTab">
        <attribute name="title">
@@ -101,6 +101,16 @@
          </layout>
         </item>
         <item>
+         <widget class="QSlider" name="imageSlider">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QPushButton" name="loadImagesButton">
@@ -138,6 +148,7 @@ p, li { white-space: pre-wrap; }
        </layout>
        <zorder></zorder>
        <zorder>textBrowser</zorder>
+       <zorder>imageSlider</zorder>
       </widget>
       <widget class="QWidget" name="reconstructionTab">
        <property name="enabled">
