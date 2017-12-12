@@ -27,11 +27,11 @@
        <bool>false</bool>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="calibrationTab">
        <attribute name="title">
-        <string>Tab 1</string>
+        <string>Calibration</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -147,7 +147,7 @@ p, li { white-space: pre-wrap; }
         <cursorShape>ArrowCursor</cursorShape>
        </property>
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>Reconstruction</string>
        </attribute>
        <widget class="QWidget" name="verticalLayoutWidget">
         <property name="geometry">
@@ -195,7 +195,7 @@ p, li { white-space: pre-wrap; }
         <bool>false</bool>
        </property>
        <attribute name="title">
-        <string>Page</string>
+        <string>Visualization</string>
        </attribute>
       </widget>
      </widget>
