@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from PyQt4 import QtGui
+from PyQt4 import QtCore
 
 class Calibration():
   def __init__(self, ui, row = 9, col = 6):
@@ -40,25 +41,12 @@ class Calibration():
     objp[:, :2] = np.mgrid[0:self.row, 0:self.col].T.reshape(-1, 2)
 
     # Arrays to store object points and image points from all the images.
-    #objpoints = [] # 3d point in real world space
-    #imgpoints = [] # 2d points in image plane.
-
-    # Parallel version.
-    #num_cores = multiprocessing.cpu_count()
-    #objpoints, imgpoints = Parallel(n_jobs = num_cores)(delayed(computeChessboardPoints)(image) for image in images)
-    #Parallel(n_jobs = num_cores)(delayed(computeChessboardPoints)(image, row, col, criteria, objpoints, imgpoints, objp) for image in images)
-
-    # Arrays to store object points and image points from all the images.
     objpoints = [] # 3d point in real world space
     imgpoints = [] # 2d points in image plane.
 
-    #self.progress = QtGui.QProgressDialog("Calibrating...", "cancel", 0, 10)
-    #self.progress.setFocus()
-    #self.progress.show()
+    step = 100.0 / len(images)
+    val = 0
 
-    #step = 100.0 / len(images)
-    #val = 0
-    # Basic version.
     for image in images:
       gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -67,12 +55,12 @@ class Calibration():
 
       # If found, add object points, image points (after refining them)
       if ret:
-        objpoints.append(objp)
-        cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-        imgpoints.append(corners)
-        #val += step
-        #self.progress.setValue(val)
+          objpoints.append(objp)
+          cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+          imgpoints.append(corners)
+          val += step
+          self.ui.calibrationProgress.setValue(int(val))
 
+    self.ui.calibrationProgress.setValue(100)
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
-    #self.progress.close()
     return (mtx, dist)

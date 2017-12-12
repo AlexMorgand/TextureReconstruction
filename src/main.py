@@ -29,6 +29,8 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         self.imageSlider.setVisible(False)
         self.imageSlider.valueChanged.connect(self.sliderChange)
 
+        self.calibrationProgress.setVisible(False)
+
         # Attributes.
         self.calibImages = []
         self.undistortedImages = []
@@ -38,6 +40,8 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 
     def loadImagesCalib(self):
         self.calibImages = []
+        self.undistortedImages = []
+        self.distortedImages = []
         filenames = QtGui.QFileDialog.getOpenFileNames(self , "Open File", QtCore.QDir.currentPath());
         for fileName in filenames:
             image = QtGui.QImage(fileName)
@@ -53,22 +57,18 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         self.calibrateButton.setEnabled(True)
 
     def calibrateCamera(self):
+        self.calibrationProgress.setVisible(True)
         K, dist = self.calib.calibrateImages(self.calibImages)
+        self.calibrationProgress.setVisible(False)
         nb_img = len(self.calibImages)
         height, width, channel = self.calibImages[0].shape
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, dist, (width, height), 1, (width, height))
 
         for img in self.calibImages:
+            # OpenCV is BGR and Qt is RGB.
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             # undistort
             dst = cv2.undistort(img, K, dist, None, newcameramtx)
-
-            #mapx,mapy = cv2.initUndistortRectifyMap(K, dist, None, newcameramtx, (width, height),5)
-            #dst = cv2.remap(img,mapx,mapy,cv2.INTER_LINEAR)
-
-            # crop the image
-            #x, y, w, h = roi
-            #dst = dst[y:y+h, x:x+w]
-
             bytesPerLine = 3 * width
             tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
             self.distortedImages += [tmp]
@@ -81,6 +81,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
             self.imageSlider.setVisible(True)
             self.imageSlider.setMinimum(0)
             self.imageSlider.setMaximum(nb_img - 1)
+            self.imageSlider.setValue(0)
 
             # Initial call to init.
             self.sliderChange()
