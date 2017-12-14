@@ -133,26 +133,32 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 
         # Init image.
         poly = []
-        img = cv2.cvtColor(self.reconstructionImages[0], cv2.COLOR_BGR2RGB)
-        cv2.imshow('Square initialization', img)
+        init = cv2.cvtColor(self.reconstructionImages[0], cv2.COLOR_BGR2RGB)
+        cv2.imshow('Square initialization', init)
         cv2.setMouseCallback('Square initialization', polyDraw, poly)
         while len(poly) != 4:
             cv2.waitKey(1)
         cv2.destroyAllWindows()
         for i in range(0, len(poly)):
-            cv2.line(img, (poly[i-1][0], poly[i-1][1]), (poly[i][0], poly[i][1]), (0,0,255),5)
+            cv2.line(init, (poly[i-1][0], poly[i-1][1]), (poly[i][0], poly[i][1]), (255,0, 0),5)
 
-        height, width, channel = img.shape
+        height, width, channel = init.shape
         bytesPerLine = 3 * width
-        tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+        tmp = QtGui.QImage(init.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
         self.initImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
         self.initImage.show()
         self.recon = reconstruction.Reconstruction(self, poly, self.reconstructionImages)
-        tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+        tmp = QtGui.QImage(init.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
         self.recon.polyImages += [tmp]
 
     def alignImages(self):
-        self.recon.alignImage()
+        texture = self.recon.alignImage()
+        texture = cv2.cvtColor(texture, cv2.COLOR_BGR2RGB)
+        height, width, channel = texture.shape
+        bytesPerLine = 3 * width
+        tmp = QtGui.QImage(texture.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+        self.resultImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
+        self.resultImage.show()
 
 
 

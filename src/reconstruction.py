@@ -16,6 +16,25 @@ class Reconstruction():
         # FIXME: result image, transform four clicks into a square.
         self.ui.alignSlider.valueChanged.connect(self.reconstructionSliderChange)
 
+    def buildInitMask(self, img1):
+        mask = np.zeros(img1.shape, dtype = np.uint8)
+        # fill the ROI so it doesn't get wiped out when the mask is applied
+        #channel_count = img1.shape[2]  # i.e. 3 or 4 depending on your image
+        #ignore_mask_color = (255,) * channel_count
+        roi_corners = np.array(self.poly)
+        cv2.fillPoly(mask, np.int32([roi_corners]), (255, 255, 255))
+        return mask
+
+    def computeTexture(self):
+        # FIXME: We define the texture to be a square.
+        # Could we get the good ratio?
+        texture = np.zeros((300, 300, 3), dtype = np.uint8)
+        text_poly = np.float32(np.array([(0, 0), (300, 0), (300, 300), (0, 300)]))
+        M = cv2.getPerspectiveTransform(np.float32(np.array(self.poly)), text_poly)
+        texture = cv2.warpPerspective(self.reconstructionImages[0], M, (300, 300))
+        return texture
+
+
     def alignImage(self):
         nb_img = len(self.reconstructionImages)
         self.ui.alignProgress.setVisible(True)
@@ -28,14 +47,14 @@ class Reconstruction():
         height, width, channel = img1.shape
         bytesPerLine = 3 * width
         for i in range(1, len(self.reconstructionImages)):
-            img2 = self.reconstructionImages[i]
+            img2 = self.reconstructionImages[i].copy()
             gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
             M = self.computeHomography(gray1, gray2)
+            self.H += [M]
 
             cur_poly = []
 
             for elt in self.poly:
-                cv2.circle(img1, (elt[0], elt[1]), 4, (0, 0, 255), 5)
                 p = M * np.matrix([[elt[0]], [elt[1]], [1]])
                 p[0] = p[0] / p[2]
                 p[1] = p[1] / p[2]
@@ -46,10 +65,9 @@ class Reconstruction():
             for i in range(0, len(cur_poly)):
                 cv2.line(img2, (cur_poly[i-1][0], cur_poly[i-1][1]), (cur_poly[i][0], cur_poly[i][1]), (0,0,255),5)
 
+            img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
             tmp = QtGui.QImage(img2.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
             self.polyImages += [tmp]
-            #cv2.imshow("img2", img2)
-            #cv2.waitKey(0)
             val += step
             self.ui.alignProgress.setValue(int(val))
         self.ui.alignProgress.setValue(100)
@@ -63,13 +81,16 @@ class Reconstruction():
         # Initial call to init.
         self.reconstructionSliderChange()
 
+        return self.computeTexture()
+
 
     def computeHomography(self, gray1, gray2):
+        mask = self.buildInitMask(gray1)
         # Initiate SIFT detector
         sift = cv2.SIFT()
 
         # find the keypoints and descriptors with SIFT
-        kp1, des1 = sift.detectAndCompute(gray1, None)
+        kp1, des1 = sift.detectAndCompute(gray1, mask)
         kp2, des2 = sift.detectAndCompute(gray2, None)
 
         FLANN_INDEX_KDTREE = 0
