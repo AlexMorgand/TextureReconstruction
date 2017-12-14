@@ -34,7 +34,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         # When the reconstruction is not done disable tab 2.
         self.applicationTab.setTabEnabled(2, False)
         self.imageSlider.setVisible(False)
-        self.imageSlider.valueChanged.connect(self.sliderChange)
+        self.imageSlider.valueChanged.connect(self.calibrationSliderChange)
         self.calibrationProgress.setVisible(False)
         # Reconstruction.
         self.loadImagesReconstructionButton.clicked.connect(self.loadImagesReconstruction)
@@ -96,9 +96,9 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
             self.imageSlider.setValue(0)
 
             # Initial call to init.
-            self.sliderChange()
+            self.calibrationSliderChange()
 
-    def sliderChange(self):
+    def calibrationSliderChange(self):
         i = self.imageSlider.value()
         disImg = self.distortedImages[i]
         self.distortedImage.setPixmap(QtGui.QPixmap.fromImage(disImg))
@@ -148,6 +148,8 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         self.initImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
         self.initImage.show()
         self.recon = reconstruction.Reconstruction(self, poly, self.reconstructionImages)
+        tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+        self.recon.polyImages += [tmp]
 
     def alignImages(self):
         self.recon.alignImage()
