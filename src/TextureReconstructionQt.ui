@@ -27,7 +27,7 @@
        <bool>false</bool>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="calibrationTab">
        <attribute name="title">
@@ -369,13 +369,6 @@ p, li { white-space: pre-wrap; }
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <item>
-           <widget class="QPushButton" name="loadShaderButton">
-            <property name="text">
-             <string>Load shader</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QPushButton" name="runShaderButton">
             <property name="text">

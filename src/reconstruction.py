@@ -17,9 +17,6 @@ class Reconstruction():
 
     def buildInitMask(self, img1):
         mask = np.zeros(img1.shape, dtype = np.uint8)
-        # fill the ROI so it doesn't get wiped out when the mask is applied
-        #channel_count = img1.shape[2]  # i.e. 3 or 4 depending on your image
-        #ignore_mask_color = (255,) * channel_count
         roi_corners = np.array(self.poly)
         cv2.fillPoly(mask, np.int32([roi_corners]), (255, 255, 255))
         return mask
@@ -62,14 +59,17 @@ class Reconstruction():
 
             self.polyVector += [cur_poly]
             # Draw on images.
-            for i in range(0, len(cur_poly)):
-                cv2.line(img2, (cur_poly[i-1][0], cur_poly[i-1][1]), (cur_poly[i][0], cur_poly[i][1]), (0,0,255),5)
+            for j in range(0, len(cur_poly)):
+                cv2.line(img2, (cur_poly[j-1][0], cur_poly[j-1][1]), (cur_poly[j][0], cur_poly[j][1]), (0, 0, 255), 5)
 
             img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
             tmp = QtGui.QImage(img2.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
             self.polyImages += [tmp]
             val += step
             self.ui.alignProgress.setValue(int(val))
+            self.ui.reconstructionOutput.append("Alignment of image " + str(i) + " out of " + str(nb_img))
+	self.ui.reconstructionOutput.append("Alignment of image " + str(nb_img) + " out of " + str(nb_img))
+    	self.ui.reconstructionOutput.append("<html><b>Reconstruction done !</b></html>")
         self.ui.alignProgress.setValue(100)
         self.ui.alignSlider.setVisible(True)
         self.ui.alignProgress.setVisible(False)

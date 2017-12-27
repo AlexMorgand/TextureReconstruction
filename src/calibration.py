@@ -33,6 +33,7 @@ class Calibration():
       return False
 
   def calibrateImages(self, images):
+    self.ui.calibrationOutput.setText("")
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -67,7 +68,7 @@ class Calibration():
 	  i += 1
 
     self.ui.calibrationOutput.append("Grid calibration detection in image " + str(i) + " out of " + str(nb_img))
-    self.ui.calibrationOutput.append("Calibration done !")
+    self.ui.calibrationOutput.append("<html><b>Calibration done !</b></html>")
     self.ui.calibrationProgress.setValue(100)
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
     return (mtx, dist)

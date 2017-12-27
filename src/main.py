@@ -33,7 +33,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         # When the calibration is not done disable tab 1.
         self.applicationTab.setTabEnabled(1, False)
         # When the reconstruction is not done disable tab 2.
-        #self.applicationTab.setTabEnabled(2, False)
+        self.applicationTab.setTabEnabled(2, False)
         self.imageSlider.setVisible(False)
         self.imageSlider.valueChanged.connect(self.calibrationSliderChange)
         self.calibrationProgress.setVisible(False)
@@ -54,6 +54,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 	self.visu = visualization.Visualization(self)
 
     def loadImagesCalib(self):
+	self.calibrationOutput.setText("")
         self.calibImages = []
         self.undistortedImages = []
         self.distortedImages = []
@@ -65,11 +66,18 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
                 return
             opencv_img = cv2.imread(str(fileName))
             # A little too long.
-            # if not(self.calib.checkCalibImage(opencv_img)):
-            #    QtGui.QMessageBox.information(self, "Image Viewer", "Cannot detect a calibration grid in the image %s." % fileName)
-            #    return
-            self.calibImages += [opencv_img]
+            if not(self.calib.checkCalibImage(opencv_img)):
+		self.calibrationOutput.append("<span style='color:#ff0000;'>ReconstructImage " + fileName + " does not contain a calibration grid !</span>")
+	    else:
+		self.calibrationOutput.append("Image " + fileName + " contains a calibration grid.")
+            	self.calibImages += [opencv_img]
+		
         self.calibrateButton.setEnabled(True)
+	if (len(self.calibImages) > 3):
+		self.calibrationOutput.append("<html><b>Calibration images loaded successfully</b</html>")
+	else:
+		self.calibrationOutput.append("<html><b>Calibration images failed to load</b></html>")
+		
 
     def calibrateCamera(self):
         self.calibrationProgress.setVisible(True)
