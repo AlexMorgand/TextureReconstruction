@@ -14,6 +14,7 @@ import cv2
 
 import calibration
 import reconstruction
+import visualization
 
 # In this file, we handle the link between our library and the UI.
 
@@ -32,7 +33,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         # When the calibration is not done disable tab 1.
         self.applicationTab.setTabEnabled(1, False)
         # When the reconstruction is not done disable tab 2.
-        self.applicationTab.setTabEnabled(2, False)
+        #self.applicationTab.setTabEnabled(2, False)
         self.imageSlider.setVisible(False)
         self.imageSlider.valueChanged.connect(self.calibrationSliderChange)
         self.calibrationProgress.setVisible(False)
@@ -42,12 +43,15 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         self.alignSlider.setVisible(False)
         self.alignProgress.setVisible(False)
 
+	# Visualization.
+
         # Attributes.
         self.calibImages = []
         self.undistortedImages = []
         self.distortedImages = []
         self.reconstructionImages = []
         self.calib = calibration.Calibration(self)
+	self.visu = visualization.Visualization(self)
 
     def loadImagesCalib(self):
         self.calibImages = []

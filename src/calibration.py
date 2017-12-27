@@ -47,6 +47,9 @@ class Calibration():
     step = 100.0 / len(images)
     val = 0
 
+    i = 1
+    nb_img = len(images)
+    consoleText = ''
     for image in images:
       gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -60,7 +63,11 @@ class Calibration():
           imgpoints.append(corners)
           val += step
           self.ui.calibrationProgress.setValue(int(val))
+	  self.ui.calibrationOutput.append("Grid calibration detection in image " + str(i) + " out of " + str(nb_img))
+	  i += 1
 
+    self.ui.calibrationOutput.append("Grid calibration detection in image " + str(i) + " out of " + str(nb_img))
+    self.ui.calibrationOutput.append("Calibration done !")
     self.ui.calibrationProgress.setValue(100)
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
     return (mtx, dist)

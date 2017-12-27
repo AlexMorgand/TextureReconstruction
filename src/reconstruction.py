@@ -1,7 +1,6 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import cv2
-from matplotlib import pyplot as plt
 import numpy as np
 
 class Reconstruction():
@@ -32,6 +31,7 @@ class Reconstruction():
         text_poly = np.float32(np.array([(0, 0), (300, 0), (300, 300), (0, 300)]))
         M = cv2.getPerspectiveTransform(np.float32(np.array(self.poly)), text_poly)
         texture = cv2.warpPerspective(self.reconstructionImages[0], M, (300, 300))
+	cv2.imwrite("result.tif", texture)
         return texture
 
 
@@ -86,35 +86,25 @@ class Reconstruction():
 
     def computeHomography(self, gray1, gray2):
         mask = self.buildInitMask(gray1)
-        # Initiate SIFT detector
-        sift = cv2.SIFT()
+        # Initiate ORB detector
+	orb = cv2.ORB()
 
-        # find the keypoints and descriptors with SIFT
-        kp1, des1 = sift.detectAndCompute(gray1, mask)
-        kp2, des2 = sift.detectAndCompute(gray2, None)
+        # find the keypoints and descriptors with ORB
+        kp1, des1 = orb.detectAndCompute(gray1, mask)
+        kp2, des2 = orb.detectAndCompute(gray2, None)
 
-        FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks = 50)
 
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
+	# create BFMatcher object
+	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+	
+	# Match descriptors.
+	matches = bf.match(des1,des2)
 
-        matches = flann.knnMatch(des1, des2, k=2)
-
-        # store all the good matches as per Lowe's ratio test.
-        good = []
-        for m,n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
-
-        #if len(good)>MIN_MATCH_COUNT:
-        src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1,1,2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1,1,2)
-
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+        src_pts = np.float32([kp1[matches[i].queryIdx].pt for i in range(len(matches))]).reshape(-1,1,2)
+        dst_pts = np.float32([kp2[matches[i].trainIdx].pt for i in range(len(matches))]).reshape(-1,1,2)
+	
+        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         return M
-        #else:
-        #    print "Not enough matches are found - %d/%d" % (len(good),MIN_MATCH_COUNT)
 
     def reconstructionSliderChange(self):
         i = self.ui.alignSlider.value()
