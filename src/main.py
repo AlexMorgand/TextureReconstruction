@@ -27,28 +27,21 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
     def __init__(self):
         super(self.__class__, self).__init__()
         self.setupUi(self)
-        # Calibration.
-        self.loadImagesButton.clicked.connect(self.loadImagesCalib)
-        self.calibrateButton.clicked.connect(self.calibrateCamera)
         # When the calibration is not done disable tab 1.
         self.applicationTab.setTabEnabled(1, False)
         # When the reconstruction is not done disable tab 2.
         self.applicationTab.setTabEnabled(2, False)
+        # Calibration related.
+        self.loadImagesButton.clicked.connect(self.loadImagesCalib)
         self.imageSlider.setVisible(False)
-        self.imageSlider.valueChanged.connect(self.calibrationSliderChange)
         self.calibrationProgress.setVisible(False)
-        # Reconstruction.
+        # Reconstruction related.
         self.loadImagesReconstructionButton.clicked.connect(self.loadImagesReconstruction)
-        self.alignImagesButton.clicked.connect(self.alignImages)
         self.alignSlider.setVisible(False)
         self.alignProgress.setVisible(False)
-
-	# Visualization.
-
+        self.recon = reconstruction.Reconstruction(self)
         # Attributes.
         self.calibImages = []
-        self.undistortedImages = []
-        self.distortedImages = []
         self.reconstructionImages = []
         self.calib = calibration.Calibration(self)
 	self.visu = visualization.Visualization(self)
@@ -67,7 +60,7 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
             opencv_img = cv2.imread(str(fileName))
             # A little too long.
             if not(self.calib.checkCalibImage(opencv_img)):
-		self.calibrationOutput.append("<span style='color:#ff0000;'>ReconstructImage " + fileName + " does not contain a calibration grid !</span>")
+		self.calibrationOutput.append("<span style='color:#ff0000;'>Image " + fileName + " does not contain a calibration grid !</span>")
 	    else:
 		self.calibrationOutput.append("Image " + fileName + " contains a calibration grid.")
             	self.calibImages += [opencv_img]
@@ -77,52 +70,11 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 		self.calibrationOutput.append("<html><b>Calibration images loaded successfully</b</html>")
 	else:
 		self.calibrationOutput.append("<html><b>Calibration images failed to load</b></html>")
+	self.calib.setCalibImages(self.calibImages)
 		
-
-    def calibrateCamera(self):
-        self.calibrationProgress.setVisible(True)
-        self.K, self.dist = self.calib.calibrateImages(self.calibImages)
-        self.calibrationProgress.setVisible(False)
-        nb_img = len(self.calibImages)
-        height, width, channel = self.calibImages[0].shape
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.K, self.dist, (width, height), 1, (width, height))
-
-        for img in self.calibImages:
-            # OpenCV is BGR and Qt is RGB.
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            # undistort
-            dst = cv2.undistort(img, self.K, self.dist, None, newcameramtx)
-            bytesPerLine = 3 * width
-            tmp = QtGui.QImage(img.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-            self.distortedImages += [tmp]
-
-            tmp = QtGui.QImage(dst.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-
-            self.undistortedImages += [tmp]
-
-            self.applicationTab.setTabEnabled(1, True)
-            self.alignImagesButton.setEnabled(False)
-            self.imageSlider.setVisible(True)
-            self.imageSlider.setMinimum(0)
-            self.imageSlider.setMaximum(nb_img - 1)
-            self.imageSlider.setValue(0)
-
-            # Initial call to init.
-            self.calibrationSliderChange()
-
-    def calibrationSliderChange(self):
-        i = self.imageSlider.value()
-        disImg = self.distortedImages[i]
-        self.distortedImage.setPixmap(QtGui.QPixmap.fromImage(disImg))
-        self.distortedImage.show()
-
-        undisImg = self.undistortedImages[i]
-        self.undistortedImage.setPixmap(QtGui.QPixmap.fromImage(undisImg))
-        self.undistortedImage.show()
-
-
     def loadImagesReconstruction(self):
-        self.recontructionImages = []
+	self.recon.polyImages = []
+	self.reconstructionImages = []
         filenames = QtGui.QFileDialog.getOpenFileNames(self , "Open File", QtCore.QDir.currentPath());
         for fileName in filenames:
             image = QtGui.QImage(fileName)
@@ -130,14 +82,11 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
                 QtGui.QMessageBox.information(self, "Image Viewer", "Cannot load %s. Only image files are accepted." % fileName)
                 return
 
-
             opencv_img = cv2.imread(str(fileName))
-
-
             # FIXME: don't do it everytime.
             height, width, channel = opencv_img.shape
-            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.K, self.dist, (width, height), 1, (width, height))
-            opencv_img = cv2.undistort(opencv_img, self.K, self.dist, None, newcameramtx)
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.calib.K, self.calib.dist, (width, height), 1, (width, height))
+            opencv_img = cv2.undistort(opencv_img, self.calib.K, self.calib.dist, None, newcameramtx)
             # End.
 
             self.reconstructionImages += [opencv_img]
@@ -145,8 +94,10 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
 
         # Init image.
         poly = []
-        init = cv2.cvtColor(self.reconstructionImages[0], cv2.COLOR_BGR2RGB)
+        init = self.reconstructionImages[0].copy()
+	cv2.putText(init, "Click on the plane corners.", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
         cv2.imshow('Square initialization', init)
+        init = cv2.cvtColor(init, cv2.COLOR_BGR2RGB)
         cv2.setMouseCallback('Square initialization', polyDraw, poly)
         while len(poly) != 4:
             cv2.waitKey(1)
@@ -159,20 +110,10 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         tmp = QtGui.QImage(init.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
         self.initImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
         self.initImage.show()
-        self.recon = reconstruction.Reconstruction(self, poly, self.reconstructionImages)
+	self.recon.setReconstructionImages(self.reconstructionImages)
+	self.recon.setPoly(poly)
         tmp = QtGui.QImage(init.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-        self.recon.polyImages += [tmp]
-
-    def alignImages(self):
-        texture = self.recon.alignImage()
-        texture = cv2.cvtColor(texture, cv2.COLOR_BGR2RGB)
-        height, width, channel = texture.shape
-        bytesPerLine = 3 * width
-        tmp = QtGui.QImage(texture.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-        self.resultImage.setPixmap(QtGui.QPixmap.fromImage(tmp))
-        self.resultImage.show()
-
-
+        self.recon.polyImages = [tmp]
 
 def main():
     app = QtGui.QApplication(sys.argv)
