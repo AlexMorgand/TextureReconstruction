@@ -25,15 +25,14 @@ This application requires:
 * [OpenCV](https://opencv.org/) **(2.4+)** - Used to generate RSS Feeds
 * [OSL](https://github.com/imageworks/OpenShadingLanguage) - OpenShadingLanguage library. See the link for the other requirements.
 
-### Installing
+### Installation and execution
 
+Make sure that you have a working version of the OSL library and that the binaries **oslc** and **testshade** are correctly added to your *PATH*. Make sure that the libraries of OSL are also added to the *LD_LIBRARY_PATH*
 To build the application, just run:
 
 ```
 make
 ```
-
-in the source folder.
 
 To run the application, do:
 
@@ -46,9 +45,6 @@ make run
 * Dense reconstruction
 * Pose estimation
 * Texture on a mesh
-
-End with an example of getting some data out of the system or using it for a little demo
-
 
 ## Authors
 
