@@ -34,12 +34,16 @@ class TextureReconstruction(QtGui.QMainWindow, ui.Ui_MainWindow):
         # Calibration related.
         self.loadImagesButton.clicked.connect(self.loadImagesCalib)
         self.imageSlider.setVisible(False)
+        self.undistortedImage.setVisible(False)
+        self.distortedImage.setVisible(False)
         self.calibrationProgress.setVisible(False)
         # Reconstruction related.
         self.loadImagesReconstructionButton.clicked.connect(self.loadImagesReconstruction)
         self.alignSlider.setVisible(False)
         self.alignProgress.setVisible(False)
         self.recon = reconstruction.Reconstruction(self)
+        self.initImage.setVisible(False)
+        self.resultImage.setVisible(False)
         # Attributes.
         self.calibImages = []
         self.reconstructionImages = []
