@@ -15,6 +15,7 @@ make doc
 ```
 
 to see a detailed tutorial of the application's usage.
+Examples can be found in the *data* folder.
 
 ## Built With
 
